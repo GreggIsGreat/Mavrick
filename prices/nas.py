@@ -139,7 +139,7 @@ class PriceScraperApp(ft.Column):
             else:
                 color = ft.colors.RED
         else:
-            color = ft.colors.BLACK
+            color = ft.colors.BLUE
 
         text_control.value = f"{current_value:.2f}"
         text_control.color = color
