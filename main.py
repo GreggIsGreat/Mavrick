@@ -1,9 +1,13 @@
+from datetime import datetime, timedelta
+from threading import Timer
+
 from flet import *
 
 from prices.xrp import WebScraper
 from prices.nas import PriceScraperApp
 from sidebar.sidebar import ModernNavBar
 from fiscal_insight.prediction import Tab_menu
+from prices.calender import EconomicCalendarApp
 
 
 # from barcharts.barchart import Bar_chart
@@ -91,7 +95,7 @@ class SideNavbar(Column):
                         ]
                     )
                 ],
-                alignment=MainAxisAlignment.START
+                alignment=MainAxisAlignment.CENTER
             ),
             padding=-20
         )
@@ -162,17 +166,75 @@ class NavigationPanel(Column):
                 # ),
                 PopupMenuButton(
                     items=[
-                        PopupMenuItem(text='Account', on_click=self.account_page),
-                        PopupMenuItem(text='Settings', on_click=self.settings_page),
+                        PopupMenuItem(text='Coming Soon!'),
                     ],
                 ),
             ],
             bgcolor=colors.with_opacity(0.04, "WHITE")
         )
 
-
     def build(self):
         return self.topnav()
+
+
+class DateTimeDisplay(Column):
+    def __init__(self):
+        super().__init__()
+        self.current_datetime_text = Text(size=14)
+        self.next_release_datetime_text = Text(size=14)
+        self.dialog = None
+
+    def build(self):
+        self.dialog = AlertDialog(
+            title=Text("Economic Calendar"),
+            content=Column([
+                Row([
+                    Text("Current:", weight="bold", size=14),
+                    self.current_datetime_text,
+                ]),
+                Row([
+                    Text("Next Release:", weight="bold", size=14),
+                    self.next_release_datetime_text,
+                ]),
+            ]),
+            actions=[
+                IconButton(
+                    icon=icons.REFRESH,
+                    on_click=self.update_time,
+                    tooltip="Refresh Time",
+                ),
+                TextButton("Close", on_click=self.close_dialog),
+            ],
+            actions_alignment=MainAxisAlignment.END,
+        )
+        return self.dialog
+
+    def get_current_datetime(self):
+        now = datetime.now()
+        return now.strftime("%Y-%m-%d %H:%M:%S")
+
+    def get_next_release_datetime(self):
+        # This is a placeholder. Implement logic to get the actual next release time
+        # based on your economic calendar data
+        next_release = datetime.now() + timedelta(hours=1)
+        return next_release.strftime("%Y-%m-%d %H:%M:%S")
+
+    def update_time(self, e):
+        self.current_datetime_text.value = self.get_current_datetime()
+        self.next_release_datetime_text.value = self.get_next_release_datetime()
+        self.update()
+
+    def open_dialog(self, e):
+        self.update_time(None)
+        self.dialog.open = True
+        self.update()
+
+    def close_dialog(self, e):
+        self.dialog.open = False
+        self.update()
+
+    def did_mount(self):
+        self.update_time(None)
 
 
 def main(page: Page) -> None:
@@ -182,7 +244,6 @@ def main(page: Page) -> None:
     page.window_resizable = False
     page.theme_mode = ThemeMode.DARK
 
-
     page.horizontal_alignment = 'center'
     page.vertical_alignment = 'center'
     page.scroll = ScrollMode.AUTO
@@ -190,7 +251,8 @@ def main(page: Page) -> None:
     top = NavigationPanel(page)
     menu = top.drawer
     price_scraper = PriceScraperApp()
-
+    url = "https://nfs.faireconomy.media/ff_calendar_thisweek.json"
+    calender = EconomicCalendarApp(url)
 
     page.fonts = {
         'bl': 'fonts/Blanka-Regular.otf',
@@ -248,7 +310,7 @@ def main(page: Page) -> None:
                                             Text("Reset in: 10-June-204", size=10, weight="bold")
                                         ]
                                     ),
-                                    #Chart will go here
+                                    # Chart will go here
                                     Image(
                                         src=f"Chart-1.png",
                                         fit=ImageFit.CONTAIN
@@ -308,7 +370,6 @@ def main(page: Page) -> None:
                             ]
                         ),
 
-
                     ]
                 )
             )
@@ -327,50 +388,77 @@ def main(page: Page) -> None:
                             on_click=lambda _: page.go('/mainpage')
                         ),
                         Container(
-                            Row(
-                                alignment=MainAxisAlignment.SPACE_BETWEEN,
-                                controls=[
+                            Column(
+                                [
+                                    Text(
+                                        value='Profile',
+                                        weight='BOLD',
+                                        size=18,
+                                        color=colors.WHITE,
+                                    ),
                                     Container(
-                                        width=200,
-                                        padding=10,
-                                        alignment=alignment.center_left,
-                                        content=Text(
-                                            value='PROFILE PAGE',
-                                            weight='BOLD',
-                                            size=25,
+                                        alignment=alignment.center,
+                                        padding=20,
+                                        bgcolor=colors.with_opacity(0.04, 'WHITE'),
+                                        width=600,
+                                        height=600,
+                                        border_radius=10,
+                                        content=Column(
+                                            scroll=ScrollMode.AUTO,
+                                            horizontal_alignment=CrossAxisAlignment.START,
+                                            spacing=20,
+                                            controls=[
+                                                Text("About Maverick", size=18, weight="BOLD",
+                                                     color=colors.WHITE),
+                                                Text(
+                                                    "Originally this app was called Index-I. It was aimed at "
+                                                    "leveraging AI + "
+                                                    "Machine Learning for Finance then later evolved to what it is "
+                                                    "today which is "
+                                                    "Maverick. Maverick is a Machine Learning and Data Analysis "
+                                                    "Focused app"
+                                                    "that empowers users to trade with confidence. By leveraging key "
+                                                    "market indicators such as Open, Volume, High price & Low prices. "
+                                                    "Maverick predicts closing prices with high accuracy.",
+                                                    color=colors.WHITE,
+                                                ),
+                                                Text("Key Features:", size=18, weight="BOLD",
+                                                     color=colors.WHITE),
+                                                Text(
+                                                    "• Advanced ML algorithms for price prediction\n"
+                                                    "• Real-time data analysis\n"
+                                                    "• User-friendly interface for traders of all levels\n"
+                                                    "• Comprehensive market insights",
+                                                    color=colors.WHITE,
+                                                ),
+                                                Text("Developer: Thabang Teddy", size=18, weight="BOLD",
+                                                     color=colors.WHITE,),
+                                                Text(
+                                                    "Thabang Teddy is a visionary developer with expertise in Machine "
+                                                    "Learning and Financial Markets. His passion for combining "
+                                                    "cutting-edge technology with trading strategies led to the "
+                                                    "creation of Maverick.",
+                                                    color=colors.WHITE,
+                                                ),
+                                                Row(
+                                                    [
+                                                        IconButton(
+                                                            icon=icons.EMAIL,
+                                                            bgcolor=colors.GREEN_900,
+                                                            on_click="mailto:rttteddy@gmail.com",
+                                                            tooltip="Contact Developer"
+
+                                                        ),
+                                                    ],
+                                                    alignment=MainAxisAlignment.CENTER,
+                                                    spacing=20,
+                                                ),
+                                            ],
                                         ),
                                     ),
-                                    # Container(
-                                    #     width=100,
-                                    #     padding=10,
-                                    #     alignment=alignment.center_right,
-                                    #     content=Icon(
-                                    #         icons.PERSON,
-                                    #         color='BLUE',
-                                    #         size=30,
-                                    #     ),
-                                    # ),
-                                ]),
-                            # bgcolor=colors.with_opacity(0.03, 'WHITE54'),
-                            # padding=8,
-                            # margin=2,
-                            # width=400,
-                            # height=100,
-                            # border_radius=10,
-                        ),
-                        Container(
-                            alignment=alignment.center,
-                            padding=10,
-                            bgcolor=colors.with_opacity(0.4, color="INDIGO"),
-                            width=300,
-                            height=400,
-                            content=Column(
-                                horizontal_alignment=CrossAxisAlignment.START,
-                                controls=[
-                                    TextField(label="Open Price", border="underline", border_color=colors.WHITE),
-                                    TextField(label="Volume Price", border="underline", border_color=colors.WHITE)
-                                ]
-                            )
+                                ],
+                                spacing=20,
+                            ),
                         )
                         # GridView(
                         #     expand=1,
@@ -401,213 +489,39 @@ def main(page: Page) -> None:
         # Economic View
         if page.route == "/economic":
             topnav = top.topnav()
+            date_time_display = DateTimeDisplay()
             page.views.append(
                 View(
                     route='/economic',
                     controls=[
                         topnav,
                         menu,
-                        FloatingActionButton(
-                            icon=icons.HOME_FILLED,
-                            on_click=lambda _: page.go('/mainpage')
+                        Container(
+                            width=380,
+                            height=600,  # Increased height to accommodate the switch and data
+                            content=calender
                         ),
-                        Row(
-                            controls=[
-                                Text(
-                                    value='Economic Data',
-                                    weight='BOLD',
-                                    size=18,
-                                ),
+                        Container(
+                            alignment=alignment.bottom_center,
+                            height=180,
+                            content=Row(
+                                alignment=MainAxisAlignment.SPACE_BETWEEN,
+                                controls=[
+                                    FloatingActionButton(
+                                        bgcolor="BLUE900",
+                                        icon=icons.ACCESS_TIME,
+                                        on_click=date_time_display.open_dialog,
+                                    ),
+                                    date_time_display,
+                                    FloatingActionButton(
+                                        icon=icons.HOME_FILLED,
+                                        bgcolor="BLUE900",
+                                        on_click=lambda _: page.go('/mainpage')
+                                    ),
+                                ]
+                            ),
+                        )
 
-                                IconButton(
-                                    icons.ERROR,
-                                    # on_click=lambda _: page.go('/mainpage'),
-                                    tooltip="Feature Coming Soon!"
-                                )
-                            ]
-                        ),
-                        Column(
-                            scroll=ScrollMode.ALWAYS,
-                            height=550,
-                            controls=[
-                                Row(
-                                    alignment=MainAxisAlignment.START,
-                                    vertical_alignment=CrossAxisAlignment.START,
-                                    controls=[
-                                        Container(
-                                            padding=15,
-                                            width=250,
-                                            height=100,
-                                            alignment=alignment.top_left,
-                                            bgcolor=colors.with_opacity(0.04, 'WHITE'),
-                                            border_radius=5,
-                                            content=Column(
-                                                alignment=MainAxisAlignment.START,
-                                                spacing=5,
-                                                controls=[
-                                                    # First row: Title and Impact
-                                                    Row(
-                                                        controls=[
-                                                            Text("FOMC Statement", size=14, weight="bold"),
-                                                            Text("High", size=14, weight="bold", color="red")
-                                                        ],
-                                                        alignment=MainAxisAlignment.SPACE_BETWEEN
-                                                    ),
-                                                    # Second row: Previous and Forecast
-                                                    Row(
-                                                        controls=[
-                                                            Text("Previous: ", size=12),
-                                                            Text("235K", size=18,  weight="bold"),  # No previous value
-                                                            Text("Forecast: ", size=12),
-                                                            Text("236K", size=18,  weight="bold")  # No forecast value
-                                                        ],
-                                                        alignment=MainAxisAlignment.SPACE_BETWEEN
-                                                    )
-                                                ]
-                                            )
-                                        ),
-
-
-                                    ]
-                                ),
-                                Row(
-                                    alignment=MainAxisAlignment.CENTER,
-                                    vertical_alignment=CrossAxisAlignment.START,
-                                    controls=[
-                                        Container(
-                                            padding=15,
-                                            width=180,
-                                            height=100,
-                                            alignment=alignment.top_left,
-                                            bgcolor=colors.with_opacity(0.04, 'WHITE'),
-                                            border_radius=border_radius.all(5),
-                                            content=Column(
-                                                alignment=MainAxisAlignment.START,
-                                                tight=True,
-                                                spacing=-30,
-                                                controls=[
-                                                    Text("Initial Jobless Claims", size=10),
-                                                    Text("123.4M", size=30, weight="bold")
-
-                                                ]
-                                            )
-
-                                        ),
-                                        Container(
-                                            padding=15,
-                                            width=180,
-                                            height=100,
-                                            alignment=alignment.top_left,
-                                            bgcolor=colors.with_opacity(0.04, 'WHITE'),
-                                            border_radius=border_radius.all(5),
-                                            content=Column(
-                                                alignment=MainAxisAlignment.START,
-                                                tight=True,
-                                                spacing=-30,
-                                                controls=[
-                                                    Text("Nonfarm Payrolls", size=10),
-                                                    Text("123.4M", size=30, weight="bold")
-
-                                                ]
-                                            )
-
-                                        ),
-
-                                    ]
-                                ),
-                                Row(
-                                    alignment=MainAxisAlignment.CENTER,
-                                    vertical_alignment=CrossAxisAlignment.START,
-                                    controls=[
-                                        Container(
-                                            padding=15,
-                                            width=180,
-                                            height=100,
-                                            alignment=alignment.top_left,
-                                            bgcolor=colors.with_opacity(0.04, 'WHITE'),
-                                            border_radius=border_radius.all(5),
-                                            content=Column(
-                                                alignment=MainAxisAlignment.START,
-                                                tight=True,
-                                                spacing=-30,
-                                                controls=[
-                                                    Text("Initial Jobless Claims", size=10),
-                                                    Text("123.4M", size=30, weight="bold")
-
-                                                ]
-                                            )
-
-                                        ),
-                                        Container(
-                                            padding=15,
-                                            width=180,
-                                            height=100,
-                                            alignment=alignment.top_left,
-                                            bgcolor=colors.with_opacity(0.04, 'WHITE'),
-                                            border_radius=border_radius.all(5),
-                                            content=Column(
-                                                alignment=MainAxisAlignment.START,
-                                                tight=True,
-                                                spacing=-30,
-                                                controls=[
-                                                    Text("Nonfarm Payrolls", size=10),
-                                                    Text("123.4M", size=30, weight="bold")
-
-                                                ]
-                                            )
-
-                                        ),
-
-                                    ]
-                                ),
-                                Row(
-                                    alignment=MainAxisAlignment.CENTER,
-                                    vertical_alignment=CrossAxisAlignment.START,
-                                    controls=[
-                                        Container(
-                                            padding=15,
-                                            width=180,
-                                            height=100,
-                                            alignment=alignment.top_left,
-                                            bgcolor=colors.with_opacity(0.04, 'WHITE'),
-                                            border_radius=border_radius.all(5),
-                                            content=Column(
-                                                alignment=MainAxisAlignment.START,
-                                                tight=True,
-                                                spacing=-30,
-                                                controls=[
-                                                    Text("Initial Jobless Claims", size=10),
-                                                    Text("123.4M", size=30, weight="bold")
-
-                                                ]
-                                            )
-
-                                        ),
-                                        Container(
-                                            padding=15,
-                                            width=180,
-                                            height=100,
-                                            alignment=alignment.top_left,
-                                            bgcolor=colors.with_opacity(0.04, 'WHITE'),
-                                            border_radius=border_radius.all(5),
-                                            content=Column(
-                                                alignment=MainAxisAlignment.START,
-                                                tight=True,
-                                                spacing=-30,
-                                                controls=[
-                                                    Text("Nonfarm Payrolls", size=10),
-                                                    Text("123.4M", size=30, weight="bold")
-
-                                                ]
-                                            )
-
-                                        ),
-
-                                    ]
-                                ),
-
-                            ]
-                        ),
                     ]
                 )
             )
@@ -653,7 +567,6 @@ def main(page: Page) -> None:
                             # font_family='MM'
                         ),
                         PricePredictorSwitcher(),
-
 
                     ]
                 )
