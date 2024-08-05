@@ -11,7 +11,7 @@ class EconomicCalendarApp(ft.Column):
         self.url = url
         self.local_timezone = local_timezone
         self.events_column = ft.Column(scroll=ft.ScrollMode.AUTO, height=950, width=440)
-        self.switch = ft.Switch(on_change=self.toggle_data)
+        self.switch = ft.Switch(on_change=self.toggle_data, active_track_color="BLUE900", active_color="WHITE")
         self.data_visible = False
 
     def build(self):

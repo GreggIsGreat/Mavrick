@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from threading import Timer
 
 from flet import *
+import json
 
 from prices.xrp import WebScraper
 from prices.nas import PriceScraperApp
@@ -17,14 +18,17 @@ from prices.calender import EconomicCalendarApp
 class PricePredictorSwitcher(Column):
     def __init__(self):
         super().__init__()
-        self.maverick_switch = Switch(value=True, active_color="BLUE600", on_change=self.update_switches, rotate=55)
-        self.index_switch = Switch(value=False, active_color="BLUE600", on_change=self.update_switches, rotate=55)
+        self.maverick_switch = Switch(value=True, active_track_color="BLUE900", active_color="WHITE",
+                                      on_change=self.update_switches, rotate=55)
+        self.index_switch = Switch(value=False, active_track_color="BLUE900", active_color="WHITE",
+                                   on_change=self.update_switches, rotate=55)
 
     def update_switches(self, e):
         if e.control == self.maverick_switch and self.maverick_switch.value:
             self.index_switch.value = False
         elif e.control == self.index_switch and self.index_switch.value:
             self.maverick_switch.value = False
+        save_switch_state(self.maverick_switch.value, self.index_switch.value)
         self.update()
 
     def build(self):
@@ -57,11 +61,16 @@ class PricePredictorSwitcher(Column):
                     "Save Changes",
                     icon="SAVE",
                     icon_color="WHITE",
-                    bgcolor="BLUE",
+                    bgcolor="BLUE900",
                     color="WHITE"
                 ),
             ]
         )
+
+
+def save_switch_state(maverick_state, index_state):
+    with open('switch_state.json', 'w') as f:
+        json.dump({"maverick": maverick_state, "index": index_state}, f)
 
 
 # User Controls
@@ -432,7 +441,7 @@ def main(page: Page) -> None:
                                                     color=colors.WHITE,
                                                 ),
                                                 Text("Developer: Thabang Teddy", size=18, weight="BOLD",
-                                                     color=colors.WHITE,),
+                                                     color=colors.WHITE, ),
                                                 Text(
                                                     "Thabang Teddy is a visionary developer with expertise in Machine "
                                                     "Learning and Financial Markets. His passion for combining "
@@ -447,7 +456,6 @@ def main(page: Page) -> None:
                                                             bgcolor=colors.GREEN_900,
                                                             on_click="mailto:rttteddy@gmail.com",
                                                             tooltip="Contact Developer"
-
                                                         ),
                                                     ],
                                                     alignment=MainAxisAlignment.CENTER,
@@ -460,29 +468,6 @@ def main(page: Page) -> None:
                                 spacing=20,
                             ),
                         )
-                        # GridView(
-                        #     expand=1,
-                        #     max_extent=200,
-                        #     animate_offset=300,
-                        #     controls=[
-                        #         # Open Price
-                        #         Container(
-                        #             padding=10,
-                        #             alignment=alignment.center,
-                        #             bgcolor=colors.with_opacity(0.10, 'BLACK'),
-                        #             border_radius=border_radius.all(5),
-                        #
-                        #         ),
-                        #         # Volume Price
-                        #         Container(
-                        #             padding=10,
-                        #             alignment=alignment.center,
-                        #             bgcolor=colors.with_opacity(0.10, 'RED'),
-                        #             border_radius=border_radius.all(5),
-                        #         ),
-                        #     ]
-                        # )
-
                     ]
                 )
             )
@@ -564,7 +549,6 @@ def main(page: Page) -> None:
                             value='Settings',
                             weight='BOLD',
                             size=18,
-                            # font_family='MM'
                         ),
                         PricePredictorSwitcher(),
 
