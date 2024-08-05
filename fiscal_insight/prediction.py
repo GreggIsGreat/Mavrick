@@ -1,6 +1,17 @@
 from flet import *
 import requests
-from prices.mav_prices import USTECH100, US30, GER40,XAUUSD, XRPUSD, GBPJPY
+from prices.mav_prices import USTECH100, US30, GER40, XAUUSD, XRPUSD, GBPJPY
+from prices.index_prices import USTECH100_v2, US30_v2
+import json
+
+def get_switch_state():
+    try:
+        with open('switch_state.json', 'r') as f:
+            state = json.load(f)
+        return state['maverick']
+    except FileNotFoundError:
+        return True
+
 
 
 class Tab_menu(Column):
@@ -67,7 +78,7 @@ class Tab_menu(Column):
                                             content=Text('US30', font_family='mm', size=20),
 
                                         ),
-                                        US30(page),
+                                        US30(page) if get_switch_state() else US30_v2(page),
                                     ]
                                 )
                             ),
@@ -93,7 +104,8 @@ class Tab_menu(Column):
                                             content=Text('NAS100', font_family='mm', size=20),
 
                                         ),
-                                        USTECH100(page),
+                                        USTECH100(page) if get_switch_state() else USTECH100_v2(page),
+
                                     ]
                                 )
                             ),

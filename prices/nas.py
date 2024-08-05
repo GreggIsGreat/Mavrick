@@ -15,7 +15,7 @@ class PriceScraperApp(ft.Column):
         self.current_usd_index = None
 
     def build(self):
-        self.switch = ft.Switch(on_change=self.toggle_scraping)
+        self.switch = ft.Switch(on_change=self.toggle_scraping, active_track_color="BLUE900", active_color="WHITE")
         self.price_text = ft.Text("19000.00", size=30, weight="bold")
         self.usd_index_text = ft.Text("104.305", size=30, weight="bold")
 

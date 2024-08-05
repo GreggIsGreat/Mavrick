@@ -1,3 +1,4 @@
+import asyncio
 import json
 
 import requests
@@ -9,9 +10,9 @@ class USTECH100(Column):
         super().__init__()
         self.page = page
         self.open_field = TextField(label="Open Price", border="underline", border_color=colors.WHITE)
-        self.volume_field = TextField(label="Volume",border="underline", border_color=colors.WHITE)
-        self.low_field = TextField(label="Low Price",border="underline", border_color=colors.WHITE)
-        self.high_field = TextField(label="High Price",border="underline", border_color=colors.WHITE)
+        self.volume_field = TextField(label="Volume", border="underline", border_color=colors.WHITE)
+        self.low_field = TextField(label="Low Price", border="underline", border_color=colors.WHITE)
+        self.high_field = TextField(label="High Price", border="underline", border_color=colors.WHITE)
 
         self.button_add = IconButton(icons.GET_APP, on_click=self.add_hello)
         self.button_clear = IconButton(icons.DELETE_FOREVER, on_click=self.clear_textfield)
@@ -28,14 +29,23 @@ class USTECH100(Column):
             content=Text(value="Results", size=14, font_family="mm", weight='bold'),
 
         )
+        self.loading_ring = ProgressRing(visible=False)
 
-    def add_hello(self, e):
+    async def add_hello(self, e):
+        self.loading_ring.visible = True
+        self.update()
+
+        # Simulate network delay
+        await asyncio.sleep(1)
+
         data = requests.get("https://maverick-6nk0.onrender.com/getnas100").json()
 
         self.low_field.value = data["Daily_Low"]
         self.high_field.value = data["Daily_High"]
         self.volume_field.value = data["Volume"]
         self.open_field.value = data["Open_Price"]
+
+        self.loading_ring.visible = False
         self.update()
 
     def clear_textfield(self, e):
@@ -99,6 +109,7 @@ class USTECH100(Column):
                                 self.button_submit,
                             ]),
                     ),
+                    self.loading_ring,
                 ],
             ),
             self.pred_container,
@@ -111,10 +122,10 @@ class US30(Column):
     def __init__(self, page):
         super().__init__()
         self.page = page
-        self.open_field = TextField(label="Open Price", border="underline",border_color=colors.WHITE)
-        self.volume_field = TextField(label="Volume", border="underline",border_color=colors.WHITE)
-        self.low_field = TextField(label="Low Price", border="underline",border_color=colors.WHITE)
-        self.high_field = TextField(label="High Price",border="underline", border_color=colors.WHITE)
+        self.open_field = TextField(label="Open Price", border="underline", border_color=colors.WHITE)
+        self.volume_field = TextField(label="Volume", border="underline", border_color=colors.WHITE)
+        self.low_field = TextField(label="Low Price", border="underline", border_color=colors.WHITE)
+        self.high_field = TextField(label="High Price", border="underline", border_color=colors.WHITE)
 
         self.button_add = IconButton(icons.GET_APP, on_click=self.add_hello)
         self.button_clear = IconButton(icons.DELETE_FOREVER, on_click=self.clear_textfield)
@@ -131,14 +142,23 @@ class US30(Column):
             content=Text(value="Results", size=14, font_family="mm", weight='bold'),
 
         )
+        self.loading_ring = ProgressRing(visible=False)
 
-    def add_hello(self, e):
+    async def add_hello(self, e):
+        self.loading_ring.visible = True
+        self.update()
+
+        # Simulate network delay
+        await asyncio.sleep(1)
+
         data = requests.get("https://maverick-6nk0.onrender.com/getus30").json()
 
         self.low_field.value = data["daily_low"]
         self.high_field.value = data["daily_high"]
         self.volume_field.value = data["volume"]
         self.open_field.value = data["open_price"]
+
+        self.loading_ring.visible = False
         self.update()
 
     def clear_textfield(self, e):
@@ -203,10 +223,13 @@ class US30(Column):
 
                             ]),
                     ),
+                    self.loading_ring,
                 ],
             ),
             self.pred_container,
         ])
+
+
 #
 #     # TODO change to GOLD to GERMAN40 for now
 #
@@ -214,10 +237,10 @@ class GER40(Column):
     def __init__(self, page):
         super().__init__()
         self.page = page
-        self.open_field = TextField(label="Open Price", border="underline",border_color=colors.WHITE)
-        self.volume_field = TextField(label="Volume", border="underline",border_color=colors.WHITE)
-        self.low_field = TextField(label="Low Price", border="underline",border_color=colors.WHITE)
-        self.high_field = TextField(label="High Price", border="underline",border_color=colors.WHITE)
+        self.open_field = TextField(label="Open Price", border="underline", border_color=colors.WHITE)
+        self.volume_field = TextField(label="Volume", border="underline", border_color=colors.WHITE)
+        self.low_field = TextField(label="Low Price", border="underline", border_color=colors.WHITE)
+        self.high_field = TextField(label="High Price", border="underline", border_color=colors.WHITE)
 
         self.button_disabled = IconButton(icons.REMOVE_OUTLINED, disabled=True)
         self.button_refresh = IconButton(icons.AUTORENEW_OUTLINED, on_click=self.add_hello)
@@ -234,8 +257,15 @@ class GER40(Column):
             content=Text(value="Results", size=14, font_family="mm", weight='bold'),
 
         )
+        self.loading_ring = ProgressRing(visible=False)
 
-    def add_hello(self, e):
+    async def add_hello(self, e):
+        self.loading_ring.visible = True
+        self.update()
+
+        # Simulate network delay
+        await asyncio.sleep(1)
+
         data = requests.get("https://index-i.onrender.com/german40").text
         open_price = data.split("Open: ")[1].split("\\n")[0]
         volume = data.split("Volume: ")[1].split("\\n")[0]
@@ -246,8 +276,9 @@ class GER40(Column):
         self.high_field.value = high
         self.volume_field.value = volume
         self.open_field.value = open_price
-        self.update()
 
+        self.loading_ring.visible = False
+        self.update()
     def clear_textfield(self, e):
         self.open_field.value = ""
         self.volume_field.value = ""
@@ -301,19 +332,21 @@ class GER40(Column):
 
                             ]),
                     ),
+                    self.loading_ring,
                 ],
             ),
             self.pred_container,
         ])
 
+
 class XAUUSD(Column):
     def __init__(self, page):
         super().__init__()
         self.page = page
-        self.open_field = TextField(label="Open Price", border="underline",border_color=colors.WHITE)
-        self.volume_field = TextField(label="Volume", border="underline",border_color=colors.WHITE)
-        self.low_field = TextField(label="Low Price", border="underline",border_color=colors.WHITE)
-        self.high_field = TextField(label="High Price", border="underline",border_color=colors.WHITE)
+        self.open_field = TextField(label="Open Price", border="underline", border_color=colors.WHITE)
+        self.volume_field = TextField(label="Volume", border="underline", border_color=colors.WHITE)
+        self.low_field = TextField(label="Low Price", border="underline", border_color=colors.WHITE)
+        self.high_field = TextField(label="High Price", border="underline", border_color=colors.WHITE)
 
         self.button_disabled = IconButton(icons.REMOVE_OUTLINED, disabled=True)
         self.button_refresh = IconButton(icons.AUTORENEW_OUTLINED, on_click=self.add_hello)
@@ -330,16 +363,24 @@ class XAUUSD(Column):
             content=Text(value="Results", size=14, font_family="mm", weight='bold'),
 
         )
+        self.loading_ring = ProgressRing(visible=False)
 
-    def add_hello(self, e):
+    async def add_hello(self, e):
+        self.loading_ring.visible = True
+        self.update()
+
+        # Simulate network delay
+        await asyncio.sleep(1)
+
         data = requests.get("https://maverick-6nk0.onrender.com/getgold").json()
 
         self.low_field.value = data["daily_low"]
         self.high_field.value = data["daily_high"]
         self.volume_field.value = data["volume"]
         self.open_field.value = data["open_price"]
-        self.update()
 
+        self.loading_ring.visible = False
+        self.update()
     def clear_textfield(self, e):
         self.open_field.value = ""
         self.volume_field.value = ""
@@ -402,6 +443,7 @@ class XAUUSD(Column):
 
                             ]),
                     ),
+                    self.loading_ring,
                 ],
             ),
             self.pred_container,
@@ -412,10 +454,10 @@ class GBPJPY(Column):
     def __init__(self, page):
         super().__init__()
         self.page = page
-        self.open_field = TextField(label="Open Price", border="underline",border_color=colors.WHITE)
-        self.volume_field = TextField(label="Volume", border="underline",border_color=colors.WHITE)
-        self.low_field = TextField(label="Low Price", border="underline",border_color=colors.WHITE)
-        self.high_field = TextField(label="High Price", border="underline",border_color=colors.WHITE)
+        self.open_field = TextField(label="Open Price", border="underline", border_color=colors.WHITE)
+        self.volume_field = TextField(label="Volume", border="underline", border_color=colors.WHITE)
+        self.low_field = TextField(label="Low Price", border="underline", border_color=colors.WHITE)
+        self.high_field = TextField(label="High Price", border="underline", border_color=colors.WHITE)
 
         self.button_disabled = IconButton(icons.REMOVE_OUTLINED, disabled=True)
         self.button_refresh = IconButton(icons.AUTORENEW_OUTLINED, on_click=self.add_hello)
@@ -432,13 +474,22 @@ class GBPJPY(Column):
             content=Text(value="Results", size=14, font_family="mm", weight='bold'),
 
         )
+        self.loading_ring = ProgressRing(visible=False)
 
-    def add_hello(self, e):
+    async def add_hello(self, e):
+        self.loading_ring.visible = True
+        self.update()
+
+        # Simulate network delay
+        await asyncio.sleep(1)
+
         data = requests.get("https://maverick-6nk0.onrender.com/getgbpjpy").json()
 
         self.low_field.value = data["daily_low"]
         self.high_field.value = data["daily_high"]
         self.open_field.value = data["open_price"]
+
+        self.loading_ring.visible = False
         self.update()
 
     def clear_textfield(self, e):
@@ -503,6 +554,7 @@ class GBPJPY(Column):
 
                             ]),
                     ),
+                    self.loading_ring,
                 ],
             ),
             self.pred_container,
@@ -513,10 +565,10 @@ class XRPUSD(Column):
     def __init__(self, page):
         super().__init__()
         self.page = page
-        self.open_field = TextField(label="Open Price", border="underline",border_color=colors.WHITE)
-        self.volume_field = TextField(label="Volume", border="underline",border_color=colors.WHITE)
-        self.low_field = TextField(label="Low Price", border="underline",border_color=colors.WHITE)
-        self.high_field = TextField(label="High Price", border="underline",border_color=colors.WHITE)
+        self.open_field = TextField(label="Open Price", border="underline", border_color=colors.WHITE)
+        self.volume_field = TextField(label="Volume", border="underline", border_color=colors.WHITE)
+        self.low_field = TextField(label="Low Price", border="underline", border_color=colors.WHITE)
+        self.high_field = TextField(label="High Price", border="underline", border_color=colors.WHITE)
 
         self.button_disabled = IconButton(icons.REMOVE_OUTLINED, disabled=True)
         self.button_refresh = IconButton(icons.AUTORENEW_OUTLINED, on_click=self.add_hello)
@@ -533,6 +585,7 @@ class XRPUSD(Column):
             content=Text(value="Results", size=14, font_family="mm", weight='bold'),
 
         )
+        self.loading_ring = ProgressRing(visible=False)
 
     def add_hello(self, e):
         data = requests.get("https://maverick-6nk0.onrender.com/getgbpjpy").json()
@@ -603,6 +656,7 @@ class XRPUSD(Column):
 
                             ]),
                     ),
+                    self.loading_ring,
                 ],
             ),
             self.pred_container,
