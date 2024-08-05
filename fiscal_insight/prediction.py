@@ -12,7 +12,6 @@ def get_switch_state():
     except FileNotFoundError:
         return True
 
-use_maverick = get_switch_state()
 
 
 class Tab_menu(Column):
@@ -79,7 +78,7 @@ class Tab_menu(Column):
                                             content=Text('US30', font_family='mm', size=20),
 
                                         ),
-                                        US30(page) if use_maverick else US30_v2(page),
+                                        US30(page) if get_switch_state() else US30_v2(page),
                                     ]
                                 )
                             ),
@@ -105,7 +104,7 @@ class Tab_menu(Column):
                                             content=Text('NAS100', font_family='mm', size=20),
 
                                         ),
-                                        USTECH100(page) if use_maverick else USTECH100_v2(page),
+                                        USTECH100(page) if get_switch_state() else USTECH100_v2(page),
 
                                     ]
                                 )

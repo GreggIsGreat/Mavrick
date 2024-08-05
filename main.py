@@ -18,10 +18,22 @@ from prices.calender import EconomicCalendarApp
 class PricePredictorSwitcher(Column):
     def __init__(self):
         super().__init__()
-        self.maverick_switch = Switch(value=True, active_track_color="BLUE900", active_color="WHITE",
+        # Load saved state
+        saved_state = self.load_switch_state()
+        self.maverick_switch = Switch(value=saved_state.get('maverick', True),  # Default to True if missing
+                                      active_track_color="BLUE900", active_color="WHITE",
                                       on_change=self.update_switches, rotate=55)
-        self.index_switch = Switch(value=False, active_track_color="BLUE900", active_color="WHITE",
+        self.index_switch = Switch(value=saved_state.get('index', False),  # Default to False if missing
+                                   active_track_color="BLUE900", active_color="WHITE",
                                    on_change=self.update_switches, rotate=55)
+        self.snack_bar = SnackBar(content=Text("Changes saved successfully!"), duration=3000)
+
+    def load_switch_state(self):
+        try:
+            with open('switch_state.json', 'r') as f:
+                return json.load(f)
+        except FileNotFoundError:
+            return {"maverick": True, "index": False}  # Default state if file doesn't exist
 
     def update_switches(self, e):
         if e.control == self.maverick_switch and self.maverick_switch.value:
@@ -29,6 +41,11 @@ class PricePredictorSwitcher(Column):
         elif e.control == self.index_switch and self.index_switch.value:
             self.maverick_switch.value = False
         save_switch_state(self.maverick_switch.value, self.index_switch.value)
+        self.update()
+
+    def save_changes(self, e):
+        save_switch_state(self.maverick_switch.value, self.index_switch.value)
+        self.snack_bar.open = True
         self.update()
 
     def build(self):
@@ -62,12 +79,14 @@ class PricePredictorSwitcher(Column):
                     icon="SAVE",
                     icon_color="WHITE",
                     bgcolor="BLUE900",
-                    color="WHITE"
+                    color="WHITE",
+                    on_click=self.save_changes
                 ),
+                self.snack_bar,
             ]
         )
 
-
+# Save function remains the same
 def save_switch_state(maverick_state, index_state):
     with open('switch_state.json', 'w') as f:
         json.dump({"maverick": maverick_state, "index": index_state}, f)
@@ -186,6 +205,7 @@ class NavigationPanel(Column):
         return self.topnav()
 
 
+
 class DateTimeDisplay(Column):
     def __init__(self):
         super().__init__()
@@ -223,8 +243,6 @@ class DateTimeDisplay(Column):
         return now.strftime("%Y-%m-%d %H:%M:%S")
 
     def get_next_release_datetime(self):
-        # This is a placeholder. Implement logic to get the actual next release time
-        # based on your economic calendar data
         next_release = datetime.now() + timedelta(hours=1)
         return next_release.strftime("%Y-%m-%d %H:%M:%S")
 

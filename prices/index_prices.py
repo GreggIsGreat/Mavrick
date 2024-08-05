@@ -1,5 +1,5 @@
 import json
-
+import asyncio
 import requests
 from flet import *
 
@@ -22,14 +22,20 @@ class USTECH100_v2(Column):
             alignment=alignment.center,
             width=400,
             height=150,
-            # bgcolor=colors.BLUE_900,
             border=border.all(1.50, colors.BLUE_GREY_900),
             border_radius=10,
             content=Text(value="Results", size=14, font_family="mm", weight='bold'),
-
         )
 
-    def add_data(self, e):
+        self.loading_ring = ProgressRing(visible=False)
+
+    async def add_data(self, e):
+        self.loading_ring.visible = True
+        self.update()
+
+        # Simulate network delay
+        await asyncio.sleep(1)
+
         data = requests.get("https://index-i.onrender.com/nasdaq").json()
 
         open_price = data.split("Open: ")[1].split("\\n")[0]
@@ -41,6 +47,8 @@ class USTECH100_v2(Column):
         self.high_field.value = high
         self.volume_field.value = volume
         self.open_field.value = open_price
+
+        self.loading_ring.visible = False
         self.update()
 
     def clear_textfield(self, e):
@@ -70,7 +78,6 @@ class USTECH100_v2(Column):
             print(f"Failed to post data. Response: {response.text}")
 
     def output_data(self, data):
-        # Update the content of pred_container with the posted data
         self.pred_container.content = Text(value=str(data), size=14, font_family="mm", weight='bold')
         self.update()
 
@@ -84,13 +91,11 @@ class USTECH100_v2(Column):
                 alignment=MainAxisAlignment.CENTER,
                 height=80,
                 spacing=20,
-                # width=300,
                 controls=[
                     Container(
                         bgcolor=colors.GREEN_900,
                         border_radius=5,
                         padding=5,
-                        # height=70,
                         content=Row(
                             expand=4,
                             alignment=MainAxisAlignment.CENTER,
@@ -102,6 +107,7 @@ class USTECH100_v2(Column):
                                 self.button_submit,
                             ]),
                     ),
+                    self.loading_ring,
                 ],
             ),
             self.pred_container,
@@ -132,7 +138,15 @@ class US30_v2(Column):
 
         )
 
-    def add_data(self, e):
+        self.loading_ring = ProgressRing(visible=False)
+
+    async def add_data(self, e):
+        self.loading_ring.visible = True
+        self.update()
+
+        # Simulate network delay
+        await asyncio.sleep(1)
+
         data = requests.get("https://index-i.onrender.com/dowjones").json()
 
         open_price = data.split("Open: ")[1].split("\\n")[0]
@@ -144,6 +158,8 @@ class US30_v2(Column):
         self.high_field.value = high
         self.volume_field.value = volume
         self.open_field.value = open_price
+
+        self.loading_ring.visible = False
         self.update()
 
     def clear_textfield(self, e):
@@ -206,6 +222,7 @@ class US30_v2(Column):
 
                             ]),
                     ),
+                     self.loading_ring,
                 ],
             ),
             self.pred_container,
