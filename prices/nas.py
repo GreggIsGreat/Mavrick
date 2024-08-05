@@ -16,8 +16,8 @@ class PriceScraperApp(ft.Column):
 
     def build(self):
         self.switch = ft.Switch(on_change=self.toggle_scraping, active_track_color="BLUE900", active_color="WHITE")
-        self.price_text = ft.Text("19000.00", size=30, weight="bold")
-        self.usd_index_text = ft.Text("104.305", size=30, weight="bold")
+        self.price_text = ft.Text("0", size=30, weight="bold")
+        self.usd_index_text = ft.Text("0", size=30, weight="bold")
 
         dashboard_text = ft.Text(
             value='Dashboard',
