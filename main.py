@@ -140,6 +140,7 @@ class SideNavbar(Column):
 navbar = SideNavbar()
 
 
+
 # AppBar Controls
 class NavigationPanel(Column):
     def __init__(self, page):
@@ -203,7 +204,6 @@ class NavigationPanel(Column):
 
     def build(self):
         return self.topnav()
-
 
 
 class DateTimeDisplay(Column):
@@ -334,7 +334,7 @@ def main(page: Page) -> None:
                                         alignment=MainAxisAlignment.SPACE_BETWEEN,
                                         controls=[
                                             Text("60 Day Closing Price Expectancy", size=10),
-                                            Text("Reset in: 10-June-204", size=10, weight="bold")
+                                            Text("Reset in: 10-April-2025", size=10, weight="bold")
                                         ]
                                     ),
                                     # Chart will go here
@@ -345,7 +345,7 @@ def main(page: Page) -> None:
                                     Row(
                                         alignment=MainAxisAlignment.END,
                                         controls=[
-                                            IconButton(icons.SAVE, icon_color="WHITE"),
+                                            IconButton(icons.DOWNLOAD, icon_color="WHITE"),
                                             IconButton(icons.AUTORENEW_OUTLINED, icon_color="WHITE")
                                         ]
                                     )
@@ -355,11 +355,18 @@ def main(page: Page) -> None:
                         ),
 
                         Row(
+                            alignment=MainAxisAlignment.SPACE_BETWEEN,
                             controls=[
                                 Text(
                                     value='Popular News',
                                     weight='BOLD',
                                     size=18,
+                                    # fonts='os'
+                                ),
+                                Text(
+                                    value='Coming Soon!!',
+                                    weight='BOLD',
+                                    size=12,
                                     # fonts='os'
                                 ),
                             ]
