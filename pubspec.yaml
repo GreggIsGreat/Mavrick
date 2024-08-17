@@ -3,7 +3,7 @@ authors:
 description: A Flutter plugin for getting package info.
 homepage: <https://pub.dev/packages/package_info_plus>
 license: MIT
-name: maverick_apk
+name: Maverick
 repository: <https://github.com/lohanidamodar/package_info_plus>
 version: 1.2.0
 environment:
@@ -12,4 +12,4 @@ dependencies:
   flutter:
     sdk: flutter
   http: ^1.0.0
-dependency_overrides:
+dependency_overrides: {}

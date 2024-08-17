@@ -1,5 +1,6 @@
 import asyncio
 import json
+from datetime import datetime
 
 import requests
 from flet import *
@@ -16,7 +17,7 @@ class USTECH100(Column):
 
         self.button_add = IconButton(icons.GET_APP, on_click=self.add_hello)
         self.button_clear = IconButton(icons.DELETE_FOREVER, on_click=self.clear_textfield)
-        self.button_disabled = IconButton(icons.REMOVE_OUTLINED, disabled=True)
+        self.button_history = IconButton(icons.HISTORY_SHARP, on_click=self.history)
         self.button_refresh = IconButton(icons.AUTORENEW_OUTLINED, on_click=self.add_hello)
         self.button_submit = IconButton(icons.SEND, on_click=self.button_submit)
         self.pred_container = Container(
@@ -29,6 +30,7 @@ class USTECH100(Column):
             content=Text(value="Results", size=14, font_family="mm", weight='bold'),
 
         )
+        self.predictions = []
         self.loading_ring = ProgressRing(visible=False)
 
     async def add_hello(self, e):
@@ -72,6 +74,11 @@ class USTECH100(Column):
         if response.status_code == 200:
             prediction = response.json()
             self.output_data(prediction)
+            timestamp = datetime.now().strftime("%d-%b-%Y %H:%M:%S")
+            self.predictions.append({
+                "timestamp": timestamp,
+                "prediction": str(prediction)
+            })
             print(f"Data posted successfully! Prediction: {prediction}")
         else:
             print(f"Failed to post data. Response: {response.text}")
@@ -80,6 +87,50 @@ class USTECH100(Column):
         # Update the content of pred_container with the posted data
         self.pred_container.content = Text(value=str(data), size=14, font_family="mm", weight='bold')
         self.update()
+
+    def history(self, e):
+        history_controls = []
+        for pred in reversed(self.predictions):  # Display most recent first
+            history_controls.extend([
+                Text(f"Date: {pred['timestamp']}", size=10),
+                Text(f"Maverick: {pred['prediction']}", size=10),
+                Divider(color="BLUE"),
+            ])
+
+        if not history_controls:
+            history_controls = [Text("No predictions yet", size=10)]
+
+        self.dialog = AlertDialog(
+            modal=True,
+            title=Text("My History", size=16),
+            content=Container(
+                height=200,
+                width=300,
+                content=Column(
+                    scroll=ScrollMode.ALWAYS,
+                    tight=True,
+                    spacing=-5,
+                    controls=history_controls
+                )
+            ),
+            actions=[
+                IconButton(icons.CLOSE, on_click=self.handle_close)
+            ],
+            actions_alignment=MainAxisAlignment.END,
+            on_dismiss=self.on_dismiss
+        )
+
+        # Show the AlertDialog
+        e.page.dialog = self.dialog
+        self.dialog.open = True
+        e.page.update()
+
+    def handle_close(self, e):
+        self.dialog.open = False
+        e.page.update()
+
+    def on_dismiss(self, e):
+        e.page.add(Text("Modal dialog dismissed"))
 
     def build(self):
         return Column([
@@ -104,7 +155,7 @@ class USTECH100(Column):
                             controls=[
                                 self.button_add,
                                 self.button_clear,
-                                self.button_disabled,
+                                self.button_history,
                                 self.button_refresh,
                                 self.button_submit,
                             ]),

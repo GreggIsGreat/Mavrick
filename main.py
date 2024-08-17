@@ -14,6 +14,7 @@ from prices.calender import EconomicCalendarApp
 # from barcharts.barchart import Bar_chart
 
 
+
 # TODO: Thabang Teddy
 class PricePredictorSwitcher(Column):
     def __init__(self):
@@ -86,6 +87,8 @@ class PricePredictorSwitcher(Column):
             ]
         )
 
+
+
 # Save function remains the same
 def save_switch_state(maverick_state, index_state):
     with open('switch_state.json', 'w') as f:
@@ -138,7 +141,6 @@ class SideNavbar(Column):
 
 
 navbar = SideNavbar()
-
 
 
 # AppBar Controls
