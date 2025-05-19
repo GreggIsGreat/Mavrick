@@ -3,6 +3,7 @@ from threading import Timer
 
 from flet import *
 import json
+import sys
 
 from prices.xrp import WebScraper
 from prices.nas import PriceScraperApp
@@ -12,7 +13,6 @@ from prices.calender import EconomicCalendarApp
 
 
 # from barcharts.barchart import Bar_chart
-
 
 
 # TODO: Thabang Teddy
@@ -114,15 +114,6 @@ class SideNavbar(Column):
                                 opacity=1,
                                 font_family='bl'
                             ),
-                            # Text(
-                            #     value=description,
-                            #     size=9,
-                            #     weight=400,
-                            #     color='white54',
-                            #     opacity=1,
-                            #     animate_opacity=200,
-                            #     font_family='mm'
-                            # ),
                         ]
                     )
                 ],
@@ -130,6 +121,7 @@ class SideNavbar(Column):
             ),
             padding=-20
         )
+
 
     def build(self):
         return Container(
@@ -165,18 +157,86 @@ class NavigationPanel(Column):
             ]
         )
         self.page.drawer = self.drawer
+        
+        # Load saved state for the switches
+        saved_state = self.load_switch_state()
+        self.maverick_switch = Checkbox(
+            value=saved_state.get('maverick', True),
+            label="Maverick",
+            on_change=self.update_switches
+        )
+        self.index_switch = Checkbox(
+            value=saved_state.get('index', False),
+            label="Index-I",
+            on_change=self.update_switches
+        )
+
+
+    def load_switch_state(self):
+        try:
+            with open('switch_state.json', 'r') as f:
+                return json.load(f)
+        except FileNotFoundError:
+            return {"maverick": True, "index": False}  # Default state if file doesn't exist
+
+    def update_switches(self, e):
+        if e.control == self.maverick_switch and self.maverick_switch.value:
+            self.index_switch.value = False
+        elif e.control == self.index_switch and self.index_switch.value:
+            self.maverick_switch.value = False
+        
+        # Save the state
+        save_switch_state(self.maverick_switch.value, self.index_switch.value)
+        
+        # Show a dialog asking to refresh
+        self.show_refresh_dialog()
+        
+        self.page.update()
+    
+    def show_refresh_dialog(self):
+        dialog = AlertDialog(
+            modal=True,
+            title=Text("Settings Changed"),
+            content=Text("The application needs to refresh to apply changes. Would you like to refresh now?"),
+            actions=[
+                TextButton("Later", on_click=self.close_dialog),
+                TextButton("Refresh Now", on_click=self.refresh_application),
+            ],
+            actions_alignment=MainAxisAlignment.END,
+        )
+        
+        self.page.dialog = dialog
+        dialog.open = True
+        self.page.update()
+    
+    def close_dialog(self, e):
+        self.page.dialog.open = False
+        self.page.update()
+    
+    def refresh_application(self, e):
+        # Close any open dialog
+        if hasattr(self.page, 'dialog') and self.page.dialog:
+            self.page.dialog.open = False
+        
+        # Show loading indicator
+        self.page.splash = ProgressBar()
+        self.page.update()
+        
+        # Reload the current route to refresh the application
+        current_route = self.page.route
+        self.page.go("/")  # First go to home
+        if current_route != "/":
+            # Then go back to the original route if not already home
+            self.page.go(current_route)
+        
+        # Remove splash after a short delay
+        self.page.splash = None
+        self.page.update()
 
     def show_drawer(self, e):
         self.drawer.open = True
         self.drawer.update()
         print('Drawer Is Working')
-
-    def account_page(self, e):
-        # print(self.page)
-        self.page.go('/account')
-
-    def settings_page(self, e):
-        self.page.go('/settings')
 
     def intrinsic_value(self, e):
         self.page.go('/intrinsic')
@@ -191,13 +251,19 @@ class NavigationPanel(Column):
             title=navbar.UserData('Maverick'),  # Big Data Software Developer
             actions=[
                 # CircleAvatar(
-                #     bgcolor='BLUE800',
-                #     color='WHITE',
-                #     content=Text('TED', size=12),
-                # ),
                 PopupMenuButton(
                     items=[
-                        PopupMenuItem(text='Coming Soon!'),
+                        PopupMenuItem(
+                            content=Column([
+                                Row([
+                                    self.maverick_switch,
+                                ]),
+                                Row([
+                                    self.index_switch,
+                                ]),
+                            ]),
+                            on_click=None,  # Disable click handling on the item itself
+                        ),
                     ],
                 ),
             ],
@@ -217,10 +283,10 @@ class DateTimeDisplay(Column):
 
     def build(self):
         self.dialog = AlertDialog(
-            title=Text("Economic Calendar"),
+            title=Text("Date and Time", weight="bold", size=16),
             content=Column([
                 Row([
-                    Text("Current:", weight="bold", size=14),
+                    Text("Current Time:", weight="bold", size=14),
                     self.current_datetime_text,
                 ]),
                 Row([
@@ -264,6 +330,56 @@ class DateTimeDisplay(Column):
 
     def did_mount(self):
         self.update_time(None)
+
+
+# Loading indicator that shows when there's data in input fields
+class DataLoadingIndicator(UserControl):
+    def __init__(self, page, instrument_controls):
+        super().__init__()
+        self.page = page
+        self.instrument_controls = instrument_controls
+        self.progress_bar = ProgressBar(visible=False, color="BLUE900")
+        self.check_timer = None
+        
+    def did_mount(self):
+        # Start checking for data in fields
+        self.start_checking()
+        
+    def will_unmount(self):
+        # Stop checking when component is removed
+        self.stop_checking()
+        
+    def start_checking(self):
+        self.check_for_data()
+        # Check every 2 seconds
+        self.check_timer = Timer(2.0, self.start_checking)
+        self.check_timer.start()
+        
+    def stop_checking(self):
+        if self.check_timer:
+            self.check_timer.cancel()
+            self.check_timer = None
+            
+    def check_for_data(self):
+        has_data = False
+        
+        # Check if any of the text fields have data
+        for control in self.instrument_controls:
+            if hasattr(control, 'value') and control.value:
+                has_data = True
+                break
+                
+        # Update progress bar visibility
+        if has_data != self.progress_bar.visible:
+            self.progress_bar.visible = has_data
+            self.update()
+            
+    def build(self):
+        return Container(
+            content=self.progress_bar,
+            padding=10,
+            width=380
+        )
 
 
 def main(page: Page) -> None:
@@ -324,98 +440,12 @@ def main(page: Page) -> None:
                 )
             )
 
-        # Account View
-        if page.route == "/account":
-            topnav = top.topnav()
-            page.views.append(
-                View(
-                    route='/account',
-                    controls=[
-                        topnav,
-                        menu,
-                        FloatingActionButton(
-                            icon=icons.HOME_FILLED,
-                            on_click=lambda _: page.go('/mainpage')
-                        ),
-                        Container(
-                            Column(
-                                [
-                                    Text(
-                                        value='Profile',
-                                        weight='BOLD',
-                                        size=18,
-                                        color=colors.WHITE,
-                                    ),
-                                    Container(
-                                        alignment=alignment.center,
-                                        padding=20,
-                                        bgcolor=colors.with_opacity(0.04, 'WHITE'),
-                                        width=600,
-                                        height=600,
-                                        border_radius=10,
-                                        content=Column(
-                                            scroll=ScrollMode.AUTO,
-                                            horizontal_alignment=CrossAxisAlignment.START,
-                                            spacing=20,
-                                            controls=[
-                                                Text("About Maverick", size=18, weight="BOLD",
-                                                     color=colors.WHITE),
-                                                Text(
-                                                    "Originally this app was called Index-I. It was aimed at "
-                                                    "leveraging AI + "
-                                                    "Machine Learning for Finance then later evolved to what it is "
-                                                    "today which is "
-                                                    "Maverick. Maverick is a Machine Learning and Data Analysis "
-                                                    "Focused app"
-                                                    "that empowers users to trade with confidence. By leveraging key "
-                                                    "market indicators such as Open, Volume, High price & Low prices. "
-                                                    "Maverick predicts closing prices with high accuracy.",
-                                                    color=colors.WHITE,
-                                                ),
-                                                Text("Key Features:", size=18, weight="BOLD",
-                                                     color=colors.WHITE),
-                                                Text(
-                                                    "• Advanced ML algorithms for price prediction\n"
-                                                    "• Real-time data analysis\n"
-                                                    "• User-friendly interface for traders of all levels\n"
-                                                    "• Comprehensive market insights",
-                                                    color=colors.WHITE,
-                                                ),
-                                                Text("Developer: Thabang Teddy", size=18, weight="BOLD",
-                                                     color=colors.WHITE, ),
-                                                Text(
-                                                    "Thabang Teddy is a visionary developer with expertise in Machine "
-                                                    "Learning and Financial Markets. His passion for combining "
-                                                    "cutting-edge technology with trading strategies led to the "
-                                                    "creation of Maverick.",
-                                                    color=colors.WHITE,
-                                                ),
-                                                Row(
-                                                    [
-                                                        IconButton(
-                                                            icon=icons.EMAIL,
-                                                            bgcolor=colors.GREEN_900,
-                                                            on_click="mailto:rttteddy@gmail.com",
-                                                            tooltip="Contact Developer"
-                                                        ),
-                                                    ],
-                                                    alignment=MainAxisAlignment.CENTER,
-                                                    spacing=20,
-                                                ),
-                                            ],
-                                        ),
-                                    ),
-                                ],
-                                spacing=20,
-                            ),
-                        )
-                    ]
-                )
-            )
         # Economic View
         if page.route == "/economic":
             topnav = top.topnav()
             date_time_display = DateTimeDisplay()
+            economic_loading_indicator = DataLoadingIndicator(page, [calender])
+            
             page.views.append(
                 View(
                     route='/economic',
@@ -427,6 +457,7 @@ def main(page: Page) -> None:
                             height=600,  # Increased height to accommodate the switch and data
                             content=calender
                         ),
+                        economic_loading_indicator,
                         Container(
                             alignment=alignment.bottom_center,
                             height=180,
@@ -439,60 +470,29 @@ def main(page: Page) -> None:
                                         on_click=date_time_display.open_dialog,
                                     ),
                                     date_time_display,
-                                    FloatingActionButton(
-                                        icon=icons.HOME_FILLED,
-                                        bgcolor="BLUE900",
-                                        on_click=lambda _: page.go('/mainpage')
-                                    ),
                                 ]
                             ),
                         )
-
                     ]
                 )
             )
 
-        # Predictor  View
+        # Predictor View
         if page.route == "/predictor":
             topnav = top.topnav()
+            tab_menu = Tab_menu()
+            predictor_loading_indicator = DataLoadingIndicator(page, tab_menu.controls)
+            
             page.views.append(
                 View(
                     route='/predictor',
                     controls=[
                         topnav,
                         menu,
-                        FloatingActionButton(
-                            icon=icons.HOME_FILLED,
-                            on_click=lambda _: page.go('/mainpage')
-                        ),
+                        predictor_loading_indicator,
                         Row(
                             alignment=MainAxisAlignment.SPACE_BETWEEN),
-                        Tab_menu(),
-                    ]
-                )
-            )
-
-        # Settings View
-        if page.route == "/settings":
-            topnav = top.topnav()
-            page.views.append(
-                View(
-                    route='/settings',
-                    controls=[
-                        topnav,
-                        menu,
-                        FloatingActionButton(
-                            icon=icons.HOME_FILLED,
-                            bgcolor='RED800',
-                            on_click=lambda _: page.go('/mainpage')
-                        ),
-                        Text(
-                            value='Settings',
-                            weight='BOLD',
-                            size=18,
-                        ),
-                        PricePredictorSwitcher(),
-
+                        tab_menu,
                     ]
                 )
             )

@@ -64,15 +64,9 @@ class ModernNavBar(Column):
                 spacing=5,
                 controls=[
                     self.ContainedIcon(icons.DASHBOARD_ROUNDED, "Dashboard", 1, '/mainpage'),
-                    self.ContainedIcon(icons.PERSON_ROUNDED, "Profile", None, '/account'),
-                    # self.ContainedIcon(icons.DASHBOARD_ROUNDED, "Dashboard", 2),
                     self.ContainedIcon(icons.CANDLESTICK_CHART, "Fiscal Insight", 3,'/predictor'),
                     self.ContainedIcon(icons.BAR_CHART, "Economic Data", None,'/economic'),
-                    # self.ContainedIcon(icons.PIE_CHART_ROUNDED, "Analytics", None),
-                    # self.ContainedIcon(icons.FAVORITE_ROUNDED, "Price Information", None),
-                    # self.ContainedIcon(icons.WALLET_ROUNDED, "Wallet", None),
                     Divider(color="WHITE", height=12),
-                    self.ContainedIcon(icons.SETTINGS, "Settings", None, '/settings'),
                 ],
             ),
         )

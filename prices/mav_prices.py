@@ -6,51 +6,67 @@ import requests
 from flet import *
 
 
-class USTECH100(Column):
-    def __init__(self, page):
+class BaseInstrument(Column):
+    """Base class for all financial instrument widgets."""
+    
+    def __init__(self, page, endpoints=None):
         super().__init__()
         self.page = page
+        self.endpoints = endpoints or {}
+        
+        # Common text fields
         self.open_field = TextField(label="Open Price", border="underline", border_color=colors.WHITE)
         self.volume_field = TextField(label="Volume", border="underline", border_color=colors.WHITE)
         self.low_field = TextField(label="Low Price", border="underline", border_color=colors.WHITE)
         self.high_field = TextField(label="High Price", border="underline", border_color=colors.WHITE)
-
+        
+        # Common buttons
         self.button_add = IconButton(icons.GET_APP, on_click=self.add_hello)
         self.button_clear = IconButton(icons.DELETE_FOREVER, on_click=self.clear_textfield)
-        self.button_history = IconButton(icons.HISTORY_SHARP, on_click=self.history)
+        self.button_disabled = IconButton(icons.REMOVE_OUTLINED, disabled=True)
         self.button_refresh = IconButton(icons.AUTORENEW_OUTLINED, on_click=self.add_hello)
         self.button_submit = IconButton(icons.SEND, on_click=self.button_submit)
+        
+        # Common container for predictions
         self.pred_container = Container(
             alignment=alignment.center,
             width=400,
             height=150,
-            # bgcolor=colors.BLUE_900,
             border=border.all(1.50, colors.BLUE_GREY_900),
             border_radius=10,
             content=Text(value="Results", size=14, font_family="mm", weight='bold'),
-
         )
+
+        # For history tracking (only implemented in USTECH100)
         self.predictions = []
-        self.loading_ring = ProgressRing(visible=False)
 
     async def add_hello(self, e):
-        self.loading_ring.visible = True
-        self.update()
+        """Fetch data from API and populate fields."""
+        try:
+            data = await self.fetch_data()
+            self.populate_fields(data)
+        except Exception as ex:
+            print(f"Error fetching data: {ex}")
 
-        # Simulate network delay
-        await asyncio.sleep(1)
+    async def fetch_data(self):
+        """Fetch data from API - to be implemented by subclasses."""
+        raise NotImplementedError("Subclasses must implement fetch_data()")
 
-        data = requests.get("https://maverick-6nk0.onrender.com/getnas100").json()
-
-        self.low_field.value = data["Daily_Low"]
-        self.high_field.value = data["Daily_High"]
-        self.volume_field.value = data["Volume"]
-        self.open_field.value = data["Open_Price"]
-
-        self.loading_ring.visible = False
+    def populate_fields(self, data):
+        """Populate fields with data - can be overridden by subclasses."""
+        if isinstance(data, dict):
+            # Handle dictionary data
+            self.low_field.value = data.get("daily_low") or data.get("Daily_Low", "")
+            self.high_field.value = data.get("daily_high") or data.get("Daily_High", "")
+            self.volume_field.value = data.get("volume") or data.get("Volume", "")
+            self.open_field.value = data.get("open_price") or data.get("Open_Price", "")
+        else:
+            # Handle other data formats if needed
+            pass
         self.update()
 
     def clear_textfield(self, e):
+        """Clear all text fields."""
         self.open_field.value = ""
         self.volume_field.value = ""
         self.low_field.value = ""
@@ -59,36 +75,59 @@ class USTECH100(Column):
         self.update()
 
     def button_submit(self, e):
+        """Submit data to API for prediction."""
+        try:
+            data = self.prepare_data_for_submission()
+            response = self.submit_data(data)
+
+            if response.status_code == 200:
+                prediction = self.extract_prediction(response)
+                self.output_data(prediction)
+                self.record_prediction(prediction)
+                print(f"Data posted successfully! Prediction: {prediction}")
+            else:
+                print(f"Failed to post data. Response: {response.text}")
+        except Exception as ex:
+            print(f"Error submitting data: {ex}")
+
+    def prepare_data_for_submission(self):
+        """Prepare data for submission - can be overridden by subclasses."""
         format_value = lambda v: v.replace(',', '')
         volume = format_value(self.volume_field.value)
         volume = f"{float(volume) / 1000}k" if 'k' not in volume and float(volume) >= 1000 else volume
 
-        data = {
+        return {
             "open_price": format_value(self.open_field.value),
             "daily_high": format_value(self.high_field.value),
             "daily_low": format_value(self.low_field.value),
             "volume": volume
         }
 
-        response = requests.post("https://maverick-6nk0.onrender.com/post_nas100", json=data)
-        if response.status_code == 200:
-            prediction = response.json()
-            self.output_data(prediction)
-            timestamp = datetime.now().strftime("%d-%b-%Y %H:%M:%S")
-            self.predictions.append({
-                "timestamp": timestamp,
-                "prediction": str(prediction)
-            })
-            print(f"Data posted successfully! Prediction: {prediction}")
-        else:
-            print(f"Failed to post data. Response: {response.text}")
+    def submit_data(self, data):
+        """Submit data to API - to be implemented by subclasses."""
+        if not self.endpoints.get("post"):
+            raise NotImplementedError("No post endpoint defined")
+        return requests.post(self.endpoints["post"], json=data)
+
+    def extract_prediction(self, response):
+        """Extract prediction from response - can be overridden by subclasses."""
+        return response.json()
+
+    def record_prediction(self, prediction):
+        """Record prediction history - only used by some subclasses."""
+        timestamp = datetime.now().strftime("%d-%b-%Y %H:%M:%S")
+        self.predictions.append({
+            "timestamp": timestamp,
+            "prediction": str(prediction)
+        })
 
     def output_data(self, data):
-        # Update the content of pred_container with the posted data
+        """Display prediction results."""
         self.pred_container.content = Text(value=str(data), size=14, font_family="mm", weight='bold')
         self.update()
 
     def history(self, e):
+        """Show prediction history - only implemented in USTECH100."""
         history_controls = []
         for pred in reversed(self.predictions):  # Display most recent first
             history_controls.extend([
@@ -126,13 +165,16 @@ class USTECH100(Column):
         e.page.update()
 
     def handle_close(self, e):
+        """Handle dialog close button."""
         self.dialog.open = False
         e.page.update()
 
     def on_dismiss(self, e):
+        """Handle dialog dismiss event."""
         e.page.add(Text("Modal dialog dismissed"))
 
     def build(self):
+        """Build the UI."""
         return Column([
             self.open_field,
             self.volume_field,
@@ -142,573 +184,130 @@ class USTECH100(Column):
                 alignment=MainAxisAlignment.CENTER,
                 height=80,
                 spacing=20,
-                # width=300,
                 controls=[
                     Container(
                         bgcolor=colors.BLUE_900,
                         border_radius=5,
                         padding=5,
-                        # height=70,
                         content=Row(
                             expand=4,
                             alignment=MainAxisAlignment.CENTER,
-                            controls=[
-                                self.button_add,
-                                self.button_clear,
-                                self.button_history,
-                                self.button_refresh,
-                                self.button_submit,
-                            ]),
+                            controls=self.get_button_controls(),
+                        ),
                     ),
-                    self.loading_ring,
                 ],
             ),
             self.pred_container,
         ])
+    
+    def get_button_controls(self):
+        """Get button controls - can be overridden by subclasses."""
+        return [
+            self.button_add,
+            self.button_clear,
+            self.button_disabled,
+            self.button_refresh,
+            self.button_submit,
+        ]
 
-    # TODO change to GBPJPY to US30 for now
 
-
-class US30(Column):
+class USTECH100(BaseInstrument):
     def __init__(self, page):
-        super().__init__()
-        self.page = page
-        self.open_field = TextField(label="Open Price", border="underline", border_color=colors.WHITE)
-        self.volume_field = TextField(label="Volume", border="underline", border_color=colors.WHITE)
-        self.low_field = TextField(label="Low Price", border="underline", border_color=colors.WHITE)
-        self.high_field = TextField(label="High Price", border="underline", border_color=colors.WHITE)
-
-        self.button_add = IconButton(icons.GET_APP, on_click=self.add_hello)
-        self.button_clear = IconButton(icons.DELETE_FOREVER, on_click=self.clear_textfield)
-        self.button_disabled = IconButton(icons.REMOVE_OUTLINED, disabled=True)
-        self.button_refresh = IconButton(icons.AUTORENEW_OUTLINED, on_click=self.add_hello)
-        self.button_submit = IconButton(icons.SEND, on_click=self.button_submit)
-        self.pred_container = Container(
-            alignment=alignment.center,
-            width=400,
-            height=150,
-            # bgcolor=colors.BLUE_900,
-            border=border.all(1.50, colors.BLUE_GREY_900),
-            border_radius=10,
-            content=Text(value="Results", size=14, font_family="mm", weight='bold'),
-
-        )
-        self.loading_ring = ProgressRing(visible=False)
-
-    async def add_hello(self, e):
-        self.loading_ring.visible = True
-        self.update()
-
-        # Simulate network delay
-        await asyncio.sleep(1)
-
-        data = requests.get("https://maverick-6nk0.onrender.com/getus30").json()
-
-        self.low_field.value = data["daily_low"]
-        self.high_field.value = data["daily_high"]
-        self.volume_field.value = data["volume"]
-        self.open_field.value = data["open_price"]
-
-        self.loading_ring.visible = False
-        self.update()
-
-    def clear_textfield(self, e):
-        self.open_field.value = ""
-        self.volume_field.value = ""
-        self.low_field.value = ""
-        self.high_field.value = ""
-        self.pred_container.content = Text(value="Results", size=14, font_family="mm", weight='bold')
-        self.update()
-
-    def button_submit(self, e):
-        format_value = lambda v: v.replace(',', '')
-        volume = format_value(self.volume_field.value)
-        volume = f"{float(volume) / 1000}k" if 'k' not in volume and float(volume) >= 1000 else volume
-
-        data = {
-            "open_price": format_value(self.open_field.value),
-            "daily_high": format_value(self.high_field.value),
-            "daily_low": format_value(self.low_field.value),
-            "volume": volume
-        }
-
-        response = requests.post("https://maverick-6nk0.onrender.com/postus30", json=data)
-        if response.status_code == 200:
-            prediction = response.json()
-            self.output_data(prediction)
-            print(f"Data posted successfully! Prediction: {prediction}")
-        else:
-            print(f"Failed to post data. Response: {response.text}")
-
-    def output_data(self, data):
-        # Update the content of pred_container with the posted data
-        self.pred_container.content = Text(value=str(data), size=14, font_family="mm", weight='bold')
-        self.update()
-
-    def build(self):
-        return Column([
-            self.open_field,
-            self.volume_field,
-            self.low_field,
-            self.high_field,
-            Row(
-                alignment=MainAxisAlignment.CENTER,
-                height=80,
-                spacing=20,
-                # width=300,
-                controls=[
-                    Container(
-                        bgcolor=colors.BLUE_900,
-                        border_radius=5,
-                        padding=5,
-                        # height=70,
-                        content=Row(
-                            expand=4,
-                            alignment=MainAxisAlignment.CENTER,
-                            controls=[
-                                self.button_add,
-                                self.button_clear,
-                                self.button_disabled,
-                                self.button_refresh,
-                                self.button_submit,
-
-                            ]),
-                    ),
-                    self.loading_ring,
-                ],
-            ),
-            self.pred_container,
-        ])
+        super().__init__(page, endpoints={
+            "get": "https://maverick-6nk0.onrender.com/getnas100",
+            "post": "https://maverick-6nk0.onrender.com/post_nas100"
+        })
+        # Add history button which is unique to this class
+        self.button_history = IconButton(icons.HISTORY_SHARP, on_click=self.history)
+    
+    async def fetch_data(self):
+        return requests.get(self.endpoints["get"]).json()
+    
+    def get_button_controls(self):
+        return [
+            self.button_add,
+            self.button_clear,
+            self.button_history,
+            self.button_refresh,
+            self.button_submit,
+        ]
 
 
-#
-#     # TODO change to GOLD to GERMAN40 for now
-#
-class GER40(Column):
+class US30(BaseInstrument):
     def __init__(self, page):
-        super().__init__()
-        self.page = page
-        self.open_field = TextField(label="Open Price", border="underline", border_color=colors.WHITE)
-        self.volume_field = TextField(label="Volume", border="underline", border_color=colors.WHITE)
-        self.low_field = TextField(label="Low Price", border="underline", border_color=colors.WHITE)
-        self.high_field = TextField(label="High Price", border="underline", border_color=colors.WHITE)
+        super().__init__(page, endpoints={
+            "get": "https://maverick-6nk0.onrender.com/getus30",
+            "post": "https://maverick-6nk0.onrender.com/postus30"
+        })
+    
+    async def fetch_data(self):
+        return requests.get(self.endpoints["get"]).json()
 
-        self.button_disabled = IconButton(icons.REMOVE_OUTLINED, disabled=True)
-        self.button_refresh = IconButton(icons.AUTORENEW_OUTLINED, on_click=self.add_hello)
-        self.button_submit = IconButton(icons.SEND, on_click=self.button_submit)
-        self.button_add = IconButton(icons.GET_APP, on_click=self.add_hello)
-        self.button_clear = IconButton(icons.DELETE_FOREVER, on_click=self.clear_textfield)
-        self.pred_container = Container(
-            alignment=alignment.center,
-            width=400,
-            height=150,
-            # bgcolor=colors.BLUE_900,
-            border=border.all(1.50, colors.BLUE_GREY_900),
-            border_radius=10,
-            content=Text(value="Results", size=14, font_family="mm", weight='bold'),
 
-        )
-        self.loading_ring = ProgressRing(visible=False)
-
-    async def add_hello(self, e):
-        self.loading_ring.visible = True
-        self.update()
-
-        # Simulate network delay
-        await asyncio.sleep(1)
-
-        data = requests.get("https://index-i.onrender.com/german40").text
+class GER40(BaseInstrument):
+    def __init__(self, page):
+        super().__init__(page, endpoints={
+            "get": "https://index-i.onrender.com/german40",
+            "post": "https://index-i.onrender.com/ger30"
+        })
+    
+    async def fetch_data(self):
+        data = requests.get(self.endpoints["get"]).text
         open_price = data.split("Open: ")[1].split("\\n")[0]
         volume = data.split("Volume: ")[1].split("\\n")[0]
         low = data.split("Daily Low: ")[1].split("\\n")[0]
         high = data.split("Daily High: ")[1].split("\\n")[0]
-
-        self.low_field.value = low
-        self.high_field.value = high
-        self.volume_field.value = volume
-        self.open_field.value = open_price
-
-        self.loading_ring.visible = False
-        self.update()
-    def clear_textfield(self, e):
-        self.open_field.value = ""
-        self.volume_field.value = ""
-        self.low_field.value = ""
-        self.high_field.value = ""
-        self.pred_container.content = Text(value="Results", size=14, font_family="mm", weight='bold')
-        self.update()
-
-    def button_submit(self, e):
-        data = {key: float(getattr(self, f"{key}_field").value.replace(',', '')) for key in
+        
+        return {
+            "open_price": open_price,
+            "volume": volume,
+            "daily_low": low,
+            "daily_high": high
+        }
+    
+    def prepare_data_for_submission(self):
+        return {key: float(getattr(self, f"{key}_field").value.replace(',', '')) for key in
                 ["open", "volume", "low", "high"]}
-        response = requests.post("https://index-i.onrender.com/ger30", json=data)
-        if response.status_code == 200:
-            prediction = response.json()["prediction"]
-            self.output_data(prediction)
-            print(f"Data posted successfully! Prediction: {prediction}")
-        else:
-            print(f"Failed to post data. Response: {response.text}")
-
-    def output_data(self, data):
-        # Update the content of pred_container with the posted data
-        self.pred_container.content = Text(value=str(data), size=14, font_family="mm", weight='bold')
-        self.update()
-
-    def build(self):
-        return Column([
-            self.open_field,
-            self.volume_field,
-            self.low_field,
-            self.high_field,
-            Row(
-                alignment=MainAxisAlignment.CENTER,
-                height=80,
-                spacing=20,
-                # width=300,
-                controls=[
-                    Container(
-                        bgcolor=colors.BLUE_900,
-                        border_radius=5,
-                        padding=5,
-                        # height=70,
-                        content=Row(
-                            expand=4,
-                            alignment=MainAxisAlignment.CENTER,
-                            controls=[
-                                self.button_add,
-                                self.button_clear,
-                                self.button_disabled,
-                                self.button_refresh,
-                                self.button_submit,
-
-                            ]),
-                    ),
-                    self.loading_ring,
-                ],
-            ),
-            self.pred_container,
-        ])
+    
+    def extract_prediction(self, response):
+        return response.json()["prediction"]
 
 
-class XAUUSD(Column):
+class XAUUSD(BaseInstrument):
     def __init__(self, page):
-        super().__init__()
-        self.page = page
-        self.open_field = TextField(label="Open Price", border="underline", border_color=colors.WHITE)
-        self.volume_field = TextField(label="Volume", border="underline", border_color=colors.WHITE)
-        self.low_field = TextField(label="Low Price", border="underline", border_color=colors.WHITE)
-        self.high_field = TextField(label="High Price", border="underline", border_color=colors.WHITE)
-
-        self.button_disabled = IconButton(icons.REMOVE_OUTLINED, disabled=True)
-        self.button_refresh = IconButton(icons.AUTORENEW_OUTLINED, on_click=self.add_hello)
-        self.button_submit = IconButton(icons.SEND, on_click=self.button_submit)
-        self.button_add = IconButton(icons.GET_APP, on_click=self.add_hello)
-        self.button_clear = IconButton(icons.DELETE_FOREVER, on_click=self.clear_textfield)
-        self.pred_container = Container(
-            alignment=alignment.center,
-            width=400,
-            height=150,
-            # bgcolor=colors.BLUE_900,
-            border=border.all(1.50, colors.BLUE_GREY_900),
-            border_radius=10,
-            content=Text(value="Results", size=14, font_family="mm", weight='bold'),
-
-        )
-        self.loading_ring = ProgressRing(visible=False)
-
-    async def add_hello(self, e):
-        self.loading_ring.visible = True
-        self.update()
-
-        # Simulate network delay
-        await asyncio.sleep(1)
-
-        data = requests.get("https://maverick-6nk0.onrender.com/getgold").json()
-
-        self.low_field.value = data["daily_low"]
-        self.high_field.value = data["daily_high"]
-        self.volume_field.value = data["volume"]
-        self.open_field.value = data["open_price"]
-
-        self.loading_ring.visible = False
-        self.update()
-    def clear_textfield(self, e):
-        self.open_field.value = ""
-        self.volume_field.value = ""
-        self.low_field.value = ""
-        self.high_field.value = ""
-        self.pred_container.content = Text(value="Results", size=14, font_family="mm", weight='bold')
-        self.update()
-
-    def button_submit(self, e):
-        format_value = lambda v: v.replace(',', '')
-        volume = format_value(self.volume_field.value)
-        volume = f"{float(volume) / 1000}k" if 'k' not in volume and float(volume) >= 1000 else volume
-
-        data = {
-            "open_price": format_value(self.open_field.value),
-            "daily_high": format_value(self.high_field.value),
-            "daily_low": format_value(self.low_field.value),
-            "volume": volume
-        }
-
-        response = requests.post("https://maverick-6nk0.onrender.com/postgold", json=data)
-        if response.status_code == 200:
-            prediction = response.json()
-            self.output_data(prediction)
-            print(f"Data posted successfully! Prediction: {prediction}")
-        else:
-            print(f"Failed to post data. Response: {response.text}")
-
-    def output_data(self, data):
-        # Update the content of pred_container with the posted data
-        self.pred_container.content = Text(value=str(data), size=14, font_family="mm", weight='bold')
-        self.update()
-
-    def build(self):
-        return Column([
-            self.open_field,
-            self.volume_field,
-            self.low_field,
-            self.high_field,
-            Row(
-                alignment=MainAxisAlignment.CENTER,
-                height=80,
-                spacing=20,
-                # width=300,
-                controls=[
-                    Container(
-                        bgcolor=colors.BLUE_900,
-                        border_radius=5,
-                        padding=5,
-                        # height=70,
-                        content=Row(
-                            expand=4,
-                            alignment=MainAxisAlignment.CENTER,
-                            controls=[
-                                self.button_add,
-                                self.button_clear,
-                                self.button_disabled,
-                                self.button_refresh,
-                                self.button_submit,
-
-                            ]),
-                    ),
-                    self.loading_ring,
-                ],
-            ),
-            self.pred_container,
-        ])
+        super().__init__(page, endpoints={
+            "get": "https://maverick-6nk0.onrender.com/getgold",
+            "post": "https://maverick-6nk0.onrender.com/postgold"
+        })
+    
+    async def fetch_data(self):
+        return requests.get(self.endpoints["get"]).json()
 
 
-class GBPJPY(Column):
+class GBPJPY(BaseInstrument):
     def __init__(self, page):
-        super().__init__()
-        self.page = page
-        self.open_field = TextField(label="Open Price", border="underline", border_color=colors.WHITE)
-        self.volume_field = TextField(label="Volume", border="underline", border_color=colors.WHITE)
-        self.low_field = TextField(label="Low Price", border="underline", border_color=colors.WHITE)
-        self.high_field = TextField(label="High Price", border="underline", border_color=colors.WHITE)
-
-        self.button_disabled = IconButton(icons.REMOVE_OUTLINED, disabled=True)
-        self.button_refresh = IconButton(icons.AUTORENEW_OUTLINED, on_click=self.add_hello)
-        self.button_submit = IconButton(icons.SEND, on_click=self.button_submit)
-        self.button_add = IconButton(icons.GET_APP, on_click=self.add_hello)
-        self.button_clear = IconButton(icons.DELETE_FOREVER, on_click=self.clear_textfield)
-        self.pred_container = Container(
-            alignment=alignment.center,
-            width=400,
-            height=150,
-            # bgcolor=colors.BLUE_900,
-            border=border.all(1.50, colors.BLUE_GREY_900),
-            border_radius=10,
-            content=Text(value="Results", size=14, font_family="mm", weight='bold'),
-
-        )
-        self.loading_ring = ProgressRing(visible=False)
-
-    async def add_hello(self, e):
-        self.loading_ring.visible = True
-        self.update()
-
-        # Simulate network delay
-        await asyncio.sleep(1)
-
-        data = requests.get("https://maverick-6nk0.onrender.com/getgbpjpy").json()
-
-        self.low_field.value = data["daily_low"]
-        self.high_field.value = data["daily_high"]
-        self.open_field.value = data["open_price"]
-
-        self.loading_ring.visible = False
-        self.update()
-
-    def clear_textfield(self, e):
-        self.open_field.value = ""
-        self.volume_field.value = ""
-        self.low_field.value = ""
-        self.high_field.value = ""
-        self.pred_container.content = Text(value="Results", size=14, font_family="mm", weight='bold')
-        self.update()
-
-    def button_submit(self, e):
-        format_value = lambda v: v.replace(',', '')
-        volume = format_value(self.volume_field.value)
-        volume = f"{float(volume) / 1000}k" if 'k' not in volume and float(volume) >= 1000 else volume
-
-        data = {
-            "open_price": format_value(self.open_field.value),
-            "daily_high": format_value(self.high_field.value),
-            "daily_low": format_value(self.low_field.value),
-            "volume": volume
-        }
-
-        response = requests.post("https://maverick-6nk0.onrender.com/postgbpjpy", json=data)
-        if response.status_code == 200:
-            prediction = response.json()
-            self.output_data(prediction)
-            print(f"Data posted successfully! Prediction: {prediction}")
-        else:
-            print(f"Failed to post data. Response: {response.text}")
-
-    def output_data(self, data):
-        # Update the content of pred_container with the posted data
-        self.pred_container.content = Text(value=str(data), size=14, font_family="mm", weight='bold')
-        self.update()
-
-    def build(self):
-        return Column([
-            self.open_field,
-            self.volume_field,
-            self.low_field,
-            self.high_field,
-            Row(
-                alignment=MainAxisAlignment.CENTER,
-                height=80,
-                spacing=20,
-                # width=300,
-                controls=[
-                    Container(
-                        bgcolor=colors.BLUE_900,
-                        border_radius=5,
-                        padding=5,
-                        # height=70,
-                        content=Row(
-                            expand=4,
-                            alignment=MainAxisAlignment.CENTER,
-                            controls=[
-                                self.button_add,
-                                self.button_clear,
-                                self.button_disabled,
-                                self.button_refresh,
-                                self.button_submit,
-
-                            ]),
-                    ),
-                    self.loading_ring,
-                ],
-            ),
-            self.pred_container,
-        ])
+        super().__init__(page, endpoints={
+            "get": "https://maverick-6nk0.onrender.com/getgbpjpy",
+            "post": "https://maverick-6nk0.onrender.com/postgbpjpy"
+        })
+    
+    async def fetch_data(self):
+        data = requests.get(self.endpoints["get"]).json()
+        # Note: GBPJPY doesn't seem to have volume in the original implementation
+        return data
 
 
-class XRPUSD(Column):
+class XRPUSD(BaseInstrument):
     def __init__(self, page):
-        super().__init__()
-        self.page = page
-        self.open_field = TextField(label="Open Price", border="underline", border_color=colors.WHITE)
-        self.volume_field = TextField(label="Volume", border="underline", border_color=colors.WHITE)
-        self.low_field = TextField(label="Low Price", border="underline", border_color=colors.WHITE)
-        self.high_field = TextField(label="High Price", border="underline", border_color=colors.WHITE)
-
-        self.button_disabled = IconButton(icons.REMOVE_OUTLINED, disabled=True)
-        self.button_refresh = IconButton(icons.AUTORENEW_OUTLINED, on_click=self.add_hello)
-        self.button_submit = IconButton(icons.SEND, on_click=self.button_submit)
-        self.button_add = IconButton(icons.GET_APP, on_click=self.add_hello)
-        self.button_clear = IconButton(icons.DELETE_FOREVER, on_click=self.clear_textfield)
-        self.pred_container = Container(
-            alignment=alignment.center,
-            width=400,
-            height=150,
-            # bgcolor=colors.BLUE_900,
-            border=border.all(1.50, colors.BLUE_GREY_900),
-            border_radius=10,
-            content=Text(value="Results", size=14, font_family="mm", weight='bold'),
-
-        )
-        self.loading_ring = ProgressRing(visible=False)
-
+        super().__init__(page, endpoints={
+            "get": "https://maverick-6nk0.onrender.com/getgbpjpy",  # This seems to be the same as GBPJPY in original code
+            "post": "https://maverick-6nk0.onrender.com/postripple"
+        })
+    
+    # Override to make non-async as in the original
     def add_hello(self, e):
-        data = requests.get("https://maverick-6nk0.onrender.com/getgbpjpy").json()
-
+        data = requests.get(self.endpoints["get"]).json()
         self.low_field.value = data["daily_low"]
         self.high_field.value = data["daily_high"]
         self.open_field.value = data["open_price"]
         self.update()
-
-    def clear_textfield(self, e):
-        self.open_field.value = ""
-        self.volume_field.value = ""
-        self.low_field.value = ""
-        self.high_field.value = ""
-        self.pred_container.content = Text(value="Results", size=14, font_family="mm", weight='bold')
-        self.update()
-
-    def button_submit(self, e):
-        format_value = lambda v: v.replace(',', '')
-        volume = format_value(self.volume_field.value)
-        volume = f"{float(volume) / 1000}k" if 'k' not in volume and float(volume) >= 1000 else volume
-
-        data = {
-            "open_price": format_value(self.open_field.value),
-            "daily_high": format_value(self.high_field.value),
-            "daily_low": format_value(self.low_field.value),
-            "volume": volume
-        }
-
-        response = requests.post("https://maverick-6nk0.onrender.com/postripple", json=data)
-        if response.status_code == 200:
-            prediction = response.json()
-            self.output_data(prediction)
-            print(f"Data posted successfully! Prediction: {prediction}")
-        else:
-            print(f"Failed to post data. Response: {response.text}")
-
-    def output_data(self, data):
-        # Update the content of pred_container with the posted data
-        self.pred_container.content = Text(value=str(data), size=14, font_family="mm", weight='bold')
-        self.update()
-
-    def build(self):
-        return Column([
-            self.open_field,
-            self.volume_field,
-            self.low_field,
-            self.high_field,
-            Row(
-                alignment=MainAxisAlignment.CENTER,
-                height=80,
-                spacing=20,
-                # width=300,
-                controls=[
-                    Container(
-                        bgcolor=colors.BLUE_900,
-                        border_radius=5,
-                        padding=5,
-                        # height=70,
-                        content=Row(
-                            expand=4,
-                            alignment=MainAxisAlignment.CENTER,
-                            controls=[
-                                self.button_add,
-                                self.button_clear,
-                                self.button_disabled,
-                                self.button_submit,
-
-                            ]),
-                    ),
-                    self.loading_ring,
-                ],
-            ),
-            self.pred_container,
-        ])

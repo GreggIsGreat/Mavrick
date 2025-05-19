@@ -44,14 +44,6 @@ class Tab_menu(Column):
                                 padding=20,
                                 content=Column(
                                     controls=[
-                                        Container(
-                                            width=400,
-                                            height=30,
-                                            # bgcolor=colors.TEAL_900,
-                                            alignment=alignment.center,
-                                            content=Text('GERMAN40', font_family='mm', size=20),
-
-                                        ),
                                         GER40(page),
                                     ]
                                 )
@@ -70,14 +62,6 @@ class Tab_menu(Column):
                                 padding=20,
                                 content=Column(
                                     controls=[
-                                        Container(
-                                            width=400,
-                                            height=30,
-                                            # bgcolor=colors.TEAL_900,
-                                            alignment=alignment.center,
-                                            content=Text('US30', font_family='mm', size=20),
-
-                                        ),
                                         US30(page) if get_switch_state() else US30_v2(page),
                                     ]
                                 )
@@ -96,14 +80,6 @@ class Tab_menu(Column):
                                 padding=20,
                                 content=Column(
                                     controls=[
-                                        Container(
-                                            width=400,
-                                            height=30,
-                                            # bgcolor=colors.TEAL_900,
-                                            alignment=alignment.center,
-                                            content=Text('NAS100', font_family='mm', size=20),
-
-                                        ),
                                         USTECH100(page) if get_switch_state() else USTECH100_v2(page),
 
                                     ]
@@ -123,14 +99,6 @@ class Tab_menu(Column):
                                 padding=20,
                                 content=Column(
                                     controls=[
-                                        Container(
-                                            width=400,
-                                            height=30,
-                                            # bgcolor=colors.TEAL_900,
-                                            alignment=alignment.center,
-                                            content=Text('XAUUSD', font_family='mm', size=20),
-
-                                        ),
                                         XAUUSD(page),
                                     ]
                                 )
@@ -149,14 +117,6 @@ class Tab_menu(Column):
                                 padding=20,
                                 content=Column(
                                     controls=[
-                                        Container(
-                                            width=400,
-                                            height=30,
-                                            # bgcolor=colors.TEAL_900,
-                                            alignment=alignment.center,
-                                            content=Text('GBPJPY', font_family='mm', size=20),
-
-                                        ),
                                         GBPJPY(page),
                                     ]
                                 )
@@ -175,14 +135,6 @@ class Tab_menu(Column):
                                 padding=20,
                                 content=Column(
                                     controls=[
-                                        Container(
-                                            width=400,
-                                            height=30,
-                                            # bgcolor=colors.TEAL_900,
-                                            alignment=alignment.center,
-                                            content=Text('XRPUSD', font_family='mm', size=20),
-
-                                        ),
                                         XRPUSD(page),
                                     ]
                                 )
