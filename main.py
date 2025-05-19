@@ -331,7 +331,6 @@ class DateTimeDisplay(Column):
     def did_mount(self):
         self.update_time(None)
 
-
 # Loading indicator that shows when there's data in input fields
 class DataLoadingIndicator(UserControl):
     def __init__(self, page, instrument_controls):
@@ -382,6 +381,28 @@ class DataLoadingIndicator(UserControl):
         )
 
 
+# Helper function to create metric containers similar to dashboard
+def create_metric_container(title, value="N/A", width=185, height=90):
+    """Helper method to create consistent metric containers"""
+    return Container(
+        padding=10,
+        width=width,
+        height=height,
+        alignment=alignment.top_left,
+        bgcolor=colors.with_opacity(0.04, 'WHITE'),
+        border_radius=border_radius.all(5),
+        content=Column(
+            alignment=MainAxisAlignment.START,
+            tight=True,
+            spacing=-20,
+            controls=[
+                Text(title, size=10),
+                Text(value, size=30, weight="bold"),
+            ]
+        )
+    )
+
+
 def main(page: Page) -> None:
     page.title = "Maverick"
     page.window_width = 430  # window's width is 400 px
@@ -426,70 +447,17 @@ def main(page: Page) -> None:
 
         )
 
-        # MainPage View
+        # Predictor View
         if page.route == "/mainpage":
             topnav = top.topnav()
+            tab_menu = Tab_menu()
+
             page.views.append(
                 View(
                     route='/mainpage',
                     controls=[
                         topnav,
                         menu,
-                        PriceScraperApp(),
-                    ]
-                )
-            )
-
-        # Economic View
-        if page.route == "/economic":
-            topnav = top.topnav()
-            date_time_display = DateTimeDisplay()
-            economic_loading_indicator = DataLoadingIndicator(page, [calender])
-            
-            page.views.append(
-                View(
-                    route='/economic',
-                    controls=[
-                        topnav,
-                        menu,
-                        Container(
-                            width=380,
-                            height=600,  # Increased height to accommodate the switch and data
-                            content=calender
-                        ),
-                        economic_loading_indicator,
-                        Container(
-                            alignment=alignment.bottom_center,
-                            height=180,
-                            content=Row(
-                                alignment=MainAxisAlignment.SPACE_BETWEEN,
-                                controls=[
-                                    FloatingActionButton(
-                                        bgcolor="BLUE900",
-                                        icon=icons.ACCESS_TIME,
-                                        on_click=date_time_display.open_dialog,
-                                    ),
-                                    date_time_display,
-                                ]
-                            ),
-                        )
-                    ]
-                )
-            )
-
-        # Predictor View
-        if page.route == "/predictor":
-            topnav = top.topnav()
-            tab_menu = Tab_menu()
-            predictor_loading_indicator = DataLoadingIndicator(page, tab_menu.controls)
-            
-            page.views.append(
-                View(
-                    route='/predictor',
-                    controls=[
-                        topnav,
-                        menu,
-                        predictor_loading_indicator,
                         Row(
                             alignment=MainAxisAlignment.SPACE_BETWEEN),
                         tab_menu,

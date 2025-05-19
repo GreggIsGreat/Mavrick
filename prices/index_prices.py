@@ -13,15 +13,15 @@ class USTECH100_v2(Column):
         self.low_field = TextField(label="Low Price",border="underline", border_color=colors.WHITE)
         self.high_field = TextField(label="High Price",border="underline", border_color=colors.WHITE)
 
-        self.button_add = IconButton(icons.GET_APP, on_click=self.add_data)
-        self.button_clear = IconButton(icons.DELETE_FOREVER, on_click=self.clear_textfield)
-        self.button_disabled = IconButton(icons.REMOVE_OUTLINED, disabled=True)
-        self.button_refresh = IconButton(icons.AUTORENEW_OUTLINED, on_click=self.add_data)
-        self.button_submit = IconButton(icons.SEND, on_click=self.button_submit)
+        self.button_add = IconButton(icons.GET_APP, on_click=self.add_data, icon_color=colors.WHITE)
+        self.button_clear = IconButton(icons.DELETE_FOREVER, on_click=self.clear_textfield, icon_color=colors.WHITE)
+        self.button_disabled = IconButton(icons.REMOVE_OUTLINED, disabled=True, icon_color=colors.WHITE)
+        self.button_refresh = IconButton(icons.AUTORENEW_OUTLINED, on_click=self.add_data, icon_color=colors.WHITE)
+        self.button_submit = IconButton(icons.SEND, on_click=self.button_submit, icon_color=colors.WHITE)
         self.pred_container = Container(
             alignment=alignment.center,
             width=400,
-            height=150,
+            height=130,
             border=border.all(1.50, colors.BLUE_GREY_900),
             border_radius=10,
             content=Text(value="Results", size=14, font_family="mm", weight='bold'),
@@ -93,7 +93,7 @@ class USTECH100_v2(Column):
                 spacing=20,
                 controls=[
                     Container(
-                        bgcolor=colors.GREEN_900,
+                        bgcolor=colors.TEAL_700,
                         border_radius=5,
                         padding=5,
                         content=Row(
@@ -122,11 +122,11 @@ class US30_v2(Column):
         self.low_field = TextField(label="Low Price", border="underline",border_color=colors.WHITE)
         self.high_field = TextField(label="High Price",border="underline", border_color=colors.WHITE)
 
-        self.button_add = IconButton(icons.GET_APP, on_click=self.add_data)
-        self.button_clear = IconButton(icons.DELETE_FOREVER, on_click=self.clear_textfield)
-        self.button_disabled = IconButton(icons.REMOVE_OUTLINED, disabled=True)
-        self.button_refresh = IconButton(icons.AUTORENEW_OUTLINED, on_click=self.add_data)
-        self.button_submit = IconButton(icons.SEND, on_click=self.button_submit)
+        self.button_add = IconButton(icons.GET_APP, on_click=self.add_data, icon_color=colors.WHITE)
+        self.button_clear = IconButton(icons.DELETE_FOREVER, on_click=self.clear_textfield, icon_color=colors.WHITE)
+        self.button_disabled = IconButton(icons.REMOVE_OUTLINED, disabled=True, icon_color=colors.WHITE)
+        self.button_refresh = IconButton(icons.AUTORENEW_OUTLINED, on_click=self.add_data, icon_color=colors.WHITE)
+        self.button_submit = IconButton(icons.SEND, on_click=self.button_submit, icon_color=colors.WHITE)
         self.pred_container = Container(
             alignment=alignment.center,
             width=400,

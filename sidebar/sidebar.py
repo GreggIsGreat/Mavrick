@@ -63,9 +63,7 @@ class ModernNavBar(Column):
                 horizontal_alignment=CrossAxisAlignment.START,
                 spacing=5,
                 controls=[
-                    self.ContainedIcon(icons.DASHBOARD_ROUNDED, "Dashboard", 1, '/mainpage'),
-                    self.ContainedIcon(icons.CANDLESTICK_CHART, "Fiscal Insight", 3,'/predictor'),
-                    self.ContainedIcon(icons.BAR_CHART, "Economic Data", None,'/economic'),
+                    self.ContainedIcon(icons.DASHBOARD_ROUNDED, "Main", 1, '/mainpage'),
                     Divider(color="WHITE", height=12),
                 ],
             ),

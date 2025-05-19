@@ -21,17 +21,17 @@ class BaseInstrument(Column):
         self.high_field = TextField(label="High Price", border="underline", border_color=colors.WHITE)
         
         # Common buttons
-        self.button_add = IconButton(icons.GET_APP, on_click=self.add_hello)
-        self.button_clear = IconButton(icons.DELETE_FOREVER, on_click=self.clear_textfield)
-        self.button_disabled = IconButton(icons.REMOVE_OUTLINED, disabled=True)
-        self.button_refresh = IconButton(icons.AUTORENEW_OUTLINED, on_click=self.add_hello)
-        self.button_submit = IconButton(icons.SEND, on_click=self.button_submit)
+        self.button_add = IconButton(icons.GET_APP, on_click=self.add_hello, icon_color=colors.WHITE)
+        self.button_clear = IconButton(icons.DELETE_FOREVER, on_click=self.clear_textfield, icon_color=colors.WHITE)
+        self.button_disabled = IconButton(icons.REMOVE_OUTLINED, disabled=True, icon_color=colors.WHITE)
+        self.button_refresh = IconButton(icons.AUTORENEW_OUTLINED, on_click=self.add_hello, icon_color=colors.WHITE)
+        self.button_submit = IconButton(icons.SEND, on_click=self.button_submit, icon_color=colors.WHITE)
         
         # Common container for predictions
         self.pred_container = Container(
             alignment=alignment.center,
             width=400,
-            height=150,
+            height=130,
             border=border.all(1.50, colors.BLUE_GREY_900),
             border_radius=10,
             content=Text(value="Results", size=14, font_family="mm", weight='bold'),
@@ -218,7 +218,7 @@ class USTECH100(BaseInstrument):
             "post": "https://maverick-6nk0.onrender.com/post_nas100"
         })
         # Add history button which is unique to this class
-        self.button_history = IconButton(icons.HISTORY_SHARP, on_click=self.history)
+        self.button_history = IconButton(icons.HISTORY_SHARP, on_click=self.history, icon_color=colors.WHITE)
     
     async def fetch_data(self):
         return requests.get(self.endpoints["get"]).json()
